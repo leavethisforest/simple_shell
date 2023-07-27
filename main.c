@@ -7,7 +7,7 @@
 #include "shell.h"
 
 void signal_hand(int signaler);
-int execute(char **argums, char **fronter);
+int execute(char **args, char **fronter);
 
 /**
  * signal_hand - Prints a new prompt upon a signal.
@@ -24,17 +24,17 @@ void signal_hand(int signaler)
 
 /**
  * execute - Executes a command in a child process.
- * @argums: An array of arguments.
- * @fronter: A double pointer to the beginning of argums.
+ * @args: An array of arguments.
+ * @fronter: A double pointer to the beginning of args.
  *
  * Return: If an error occurs - a corresponding error code.
  *         O/w - The exit value of the last executed command.
  */
-int execute(char **argums, char **fronter)
+int execute(char **args, char **fronter)
 {
 	pid_t child_pid;
 	int status, flag = 0, ret = 0;
-	char *command = argums[0];
+	char *command = args[0];
 
 	if (command[0] != '/' && command[0] != '.')
 	{
@@ -45,9 +45,9 @@ int execute(char **argums, char **fronter)
 	if (!command || (access(command, F_OK) == -1))
 	{
 		if (errno == EACCES)
-			ret = (create_error(argums, 126));
+			ret = (create_error(args, 126));
 		else
-			ret = (create_error(argums, 127));
+			ret = (create_error(args, 127));
 	}
 	else
 	{
@@ -61,11 +61,11 @@ int execute(char **argums, char **fronter)
 		}
 		if (child_pid == 0)
 		{
-			execve(command, argums, environ);
+			execve(command, args, environ);
 			if (errno == EACCES)
-				ret = (create_error(argums, 126));
+				ret = (create_error(args, 126));
 			free_env();
-			free_argums(argums, fronter);
+			free_args(args, fronter);
 			free_alias_list(aliases);
 			_exit(ret);
 		}
@@ -105,7 +105,7 @@ int main(int argcount, char *argv[])
 
 	if (argcount != 1)
 	{
-		ret = proc_file_commands(argvar[1], exe_ret);
+		ret = proc_file_commands(argv[1], exe_ret);
 		free_env();
 		free_alias_list(aliases);
 		return (*exe_ret);
@@ -114,7 +114,7 @@ int main(int argcount, char *argv[])
 	if (!isatty(STDIN_FILENO))
 	{
 		while (ret != END_OF_FILE && ret != EXIT)
-			ret = handle_argums(exe_ret);
+			ret = handle_args(exe_ret);
 		free_env();
 		free_alias_list(aliases);
 		return (*exe_ret);
@@ -123,7 +123,7 @@ int main(int argcount, char *argv[])
 	while (1)
 	{
 		write(STDOUT_FILENO, prompt, 2);
-		ret = handle_argums(exe_ret);
+		ret = handle_args(exe_ret);
 		if (ret == END_OF_FILE || ret == EXIT)
 		{
 			if (ret == END_OF_FILE)

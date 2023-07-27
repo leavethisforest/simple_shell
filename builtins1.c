@@ -5,10 +5,10 @@
  */
 
 #include "shell.h"
-int (*get_builtin(char *command))(char **argums, char **fronter);
-int shellby_exit(char **argums, char **fronter);
-int shellby_cd(char **argums, char __attribute__((__unused__)) **fronter);
-int shellby_help(char **argums, char __attribute__((__unused__)) **fronter);
+int (*get_builtin(char *command))(char **args, char **fronter);
+int shellby_exit(char **args, char **fronter);
+int shellby_cd(char **args, char __attribute__((__unused__)) **fronter);
+int shellby_help(char **args, char __attribute__((__unused__)) **fronter);
 
 /**
  * get_builtin - Matches a command with a corresponding
@@ -17,7 +17,7 @@ int shellby_help(char **argums, char __attribute__((__unused__)) **fronter);
  *
  * Return: A function pointer to the corresponding builtin.
  */
-int (*get_builtin(char *command))(char **argums, char **fronter)
+int (*get_builtin(char *command))(char **args, char **fronter)
 {
 	builtin_t funcs[] = {
 		{ "exit", shellby_exit },
@@ -42,8 +42,8 @@ int (*get_builtin(char *command))(char **argums, char **fronter)
 /**
  * shellby_exit - Causes normal process termination
  *                for the shellby shell.
- * @argums: An array of arguments containing the exit value.
- * @fronter: A double pointer to the beginning of argums.
+ * @args: An array of arguments containing the exit value.
+ * @fronter: A double pointer to the beginning of args.
  *
  * Return: If there are no arguments - -3.
  *         If the given exit value is invalid - 2.
@@ -51,24 +51,24 @@ int (*get_builtin(char *command))(char **argums, char **fronter)
  *
  * Description: Upon returning -3, the program exits back in the main function.
  */
-int shellby_exit(char **argums, char **fronter)
+int shellby_exit(char **args, char **fronter)
 {
 	int i, len_of_int = 10;
 	unsigned int num = 0, max = 1 << (sizeof(int) * 8 - 1);
 
-	if (argums[0])
+	if (args[0])
 	{
-		if (argums[0][0] == '+')
+		if (args[0][0] == '+')
 		{
 			i = 1;
 			len_of_int++;
 		}
-		for (; argums[0][i]; i++)
+		for (; args[0][i]; i++)
 		{
-			if (i <= len_of_int && argums[0][i] >= '0' && argums[0][i] <= '9')
-				num = (num * 10) + (argums[0][i] - '0');
+			if (i <= len_of_int && args[0][i] >= '0' && args[0][i] <= '9')
+				num = (num * 10) + (args[0][i] - '0');
 			else
-				return (create_error(--argums, 2));
+				return (create_error(--args, 2));
 		}
 	}
 	else
@@ -76,9 +76,9 @@ int shellby_exit(char **argums, char **fronter)
 		return (-3);
 	}
 	if (num > max - 1)
-		return (create_error(--argums, 2));
-	argums -= 1;
-	free_argums(argums, fronter);
+		return (create_error(--args, 2));
+	args -= 1;
+	free_args(args, fronter);
 	free_env();
 	free_alias_list(aliases);
 	exit(num);
@@ -86,14 +86,14 @@ int shellby_exit(char **argums, char **fronter)
 
 /**
  * shellby_cd - Changes the current directory of the shellby process.
- * @argums: An array of arguments.
- * @fronter: A double pointer to the beginning of argums.
+ * @args: An array of arguments.
+ * @fronter: A double pointer to the beginning of args.
  *
  * Return: If the given string is not a directory - 2.
  *         If an error occurs - -1.
  *         Otherwise - 0.
  */
-int shellby_cd(char **argums, char __attribute__((__unused__)) **fronter)
+int shellby_cd(char **args, char __attribute__((__unused__)) **fronter)
 {
 	char **dir_info, *new_line = "\n";
 	char *oldpwd = NULL, *pwd = NULL;
@@ -103,12 +103,12 @@ int shellby_cd(char **argums, char __attribute__((__unused__)) **fronter)
 	if (!oldpwd)
 		return (-1);
 
-	if (argums[0])
+	if (args[0])
 	{
-		if (*(argums[0]) == '-' || _strcmp(argums[0], "--") == 0)
+		if (*(args[0]) == '-' || _strcmp(args[0], "--") == 0)
 		{
-			if ((argums[0][1] == '-' && argums[0][2] == '\0') ||
-					argums[0][1] == '\0')
+			if ((args[0][1] == '-' && args[0][2] == '\0') ||
+					args[0][1] == '\0')
 			{
 				if (_getenv("OLDPWD") != NULL)
 					(chdir(*_getenv("OLDPWD") + 7));
@@ -116,18 +116,18 @@ int shellby_cd(char **argums, char __attribute__((__unused__)) **fronter)
 			else
 			{
 				free(oldpwd);
-				return (create_error(argums, 2));
+				return (create_error(args, 2));
 			}
 		}
 		else
 		{
-			if (stat(argums[0], &dir) == 0 && S_ISDIR(dir.st_mode)
+			if (stat(args[0], &dir) == 0 && S_ISDIR(dir.st_mode)
 					&& ((dir.st_mode & S_IXUSR) != 0))
-				chdir(argums[0]);
+				chdir(args[0]);
 			else
 			{
 				free(oldpwd);
-				return (create_error(argums, 2));
+				return (create_error(args, 2));
 			}
 		}
 	}
@@ -154,7 +154,7 @@ int shellby_cd(char **argums, char __attribute__((__unused__)) **fronter)
 	dir_info[1] = pwd;
 	if (shellby_setenv(dir_info, dir_info) == -1)
 		return (-1);
-	if (argums[0] && argums[0][0] == '-' && argums[0][1] != '-')
+	if (args[0] && args[0][0] == '-' && args[0][1] != '-')
 	{
 		write(STDOUT_FILENO, pwd, _strlen(pwd));
 		write(STDOUT_FILENO, new_line, 1);
@@ -167,29 +167,29 @@ int shellby_cd(char **argums, char __attribute__((__unused__)) **fronter)
 
 /**
  * shellby_help - Displays information about shellby builtin commands.
- * @argums: An array of arguments.
- * @fronter: A pointer to the beginning of argums.
+ * @args: An array of arguments.
+ * @fronter: A pointer to the beginning of args.
  *
  * Return: If an error occurs - -1.
  *         Otherwise - 0.
  */
-int shellby_help(char **argums, char __attribute__((__unused__)) **fronter)
+int shellby_help(char **args, char __attribute__((__unused__)) **fronter)
 {
-	if (!argums[0])
+	if (!args[0])
 		help_all();
-	else if (_strcmp(argums[0], "alias") == 0)
+	else if (_strcmp(args[0], "alias") == 0)
 		help_alias();
-	else if (_strcmp(argums[0], "cd") == 0)
+	else if (_strcmp(args[0], "cd") == 0)
 		help_cd();
-	else if (_strcmp(argums[0], "exit") == 0)
+	else if (_strcmp(args[0], "exit") == 0)
 		help_exit();
-	else if (_strcmp(argums[0], "env") == 0)
+	else if (_strcmp(args[0], "env") == 0)
 		help_env();
-	else if (_strcmp(argums[0], "setenv") == 0)
+	else if (_strcmp(args[0], "setenv") == 0)
 		help_setenv();
-	else if (_strcmp(argums[0], "unsetenv") == 0)
+	else if (_strcmp(args[0], "unsetenv") == 0)
 		help_unsetenv();
-	else if (_strcmp(argums[0], "help") == 0)
+	else if (_strcmp(args[0], "help") == 0)
 		help_help();
 	else
 		write(STDERR_FILENO, name, _strlen(name));

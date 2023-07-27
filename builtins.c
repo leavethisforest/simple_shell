@@ -1,31 +1,31 @@
 /*
- * File: builtins.c
+ * File: builtin.c
  * Auth: Webster Mbangani
  *       Bukola Sunday
  */
 
 #include "shell.h"
 
-int shellby_alias(char **argums, char __attribute__((__unused__)) **fronters);
+int shellby_alias(char **args, char __attribute__((__unused__)) **fronters);
 void set_alias(char *variable_name, char *value);
 void print_alias(alias_t *alias);
 
 /**
  * shellby_alias - Builtin command that either prints all aliases, specific
  * aliases, or sets an alias.
- * @argums: An array of arguments.
- * @fronters: A double pointer to the beginning of argums.
+ * @args: An array of arguments.
+ * @fronters: A double pointer to the beginning of args.
  *
  * Return: If an error occurs - -1.
  *         Otherwise - 0.
  */
-int shellby_alias(char **argums, char __attribute__((__unused__)) **fronters)
+int shellby_alias(char **args, char __attribute__((__unused__)) **fronters)
 {
 	alias_t *temp = aliases;
 	int i, ret = 0;
 	char *value;
 
-	if (!argums[0])
+	if (!args[0])
 	{
 		while (temp)
 		{
@@ -34,15 +34,15 @@ int shellby_alias(char **argums, char __attribute__((__unused__)) **fronters)
 		}
 		return (ret);
 	}
-	for (i = 0; argums[i]; i++)
+	for (i = 0; args[i]; i++)
 	{
 		temp = aliases;
-		value = _strchr(argums[i], '=');
+		value = _strchr(args[i], '=');
 		if (!value)
 		{
 			while (temp)
 			{
-				if (_strcmp(argums[i], temp->name) == 0)
+				if (_strcmp(args[i], temp->name) == 0)
 				{
 					print_alias(temp);
 					break;
@@ -50,10 +50,10 @@ int shellby_alias(char **argums, char __attribute__((__unused__)) **fronters)
 				temp = temp->next;
 			}
 			if (!temp)
-				ret = create_error(argums + i, 1);
+				ret = create_error(args + i, 1);
 		}
 		else
-			set_alias(argums[i], value);
+			set_alias(args[i], value);
 	}
 	return (ret);
 }
@@ -119,34 +119,34 @@ void print_alias(alias_t *alias)
 /**
  * replace_aliases - Goes through the arguments and replace any matching alias
  * with their value.
- * @argums: 2D pointer to the arguments.
+ * @args: 2D pointer to the arguments.
  *
  * Return: 2D pointer to the arguments.
  */
-char **replace_aliases(char **argums)
+char **replace_aliases(char **args)
 {
 	alias_t *temp;
 	int i;
 	char *new_value;
 
-	if (_strcmp(argums[0], "alias") == 0)
-		return (argums);
-	for (i = 0; argums[i]; i++)
+	if (_strcmp(args[0], "alias") == 0)
+		return (args);
+	for (i = 0; args[i]; i++)
 	{
 		temp = aliases;
 		while (temp)
 		{
-			if (_strcmp(argums[i], temp->name) == 0)
+			if (_strcmp(args[i], temp->name) == 0)
 			{
 				new_value = malloc(sizeof(char) * (_strlen(temp->value) + 1));
 				if (!new_value)
 				{
-					free_argums(argums, argums);
+					free_args(args, args);
 					return (NULL);
 				}
 				_strcpy(new_value, temp->value);
-				free(argums[i]);
-				argums[i] = new_value;
+				free(args[i]);
+				args[i] = new_value;
 				i--;
 				break;
 			}
@@ -154,5 +154,5 @@ char **replace_aliases(char **argums)
 		}
 	}
 
-	return (argums);
+	return (args);
 }
